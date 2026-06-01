@@ -8,15 +8,19 @@ INDEX_FILE = "last_index.json"
 with open('posts.json', 'r', encoding='utf-8') as f:
     posts = json.load(f)
 
-# শেষ ইনডেক্স পড়া
+# শেষ ইনডেক্স পড়া (প্রথম রানে শেষ পোস্ট থেকে শুরু)
 try:
     with open(INDEX_FILE, 'r') as f:
         last_index = json.load(f)
 except:
-    last_index = -1
+    # প্রথম রান: শেষ পোস্টের ইনডেক্স দিয়ে শুরু
+    last_index = len(posts) if posts else 0
 
-# পরবর্তী ইনডেক্স (সিরিয়াল, সব শেষে আবার প্রথমে)
-next_index = (last_index + 1) % len(posts) if posts else 0
+# পরবর্তী ইনডেক্স (শেষ থেকে উপরের দিকে: শেষ → ... → প্রথম → শেষ)
+if posts:
+    next_index = (last_index - 1) % len(posts)
+else:
+    next_index = 0
 
 # পোস্ট সিলেক্ট
 post = posts[next_index]
