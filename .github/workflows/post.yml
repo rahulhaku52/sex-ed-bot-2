@@ -2,7 +2,7 @@ name: Sex Ed Auto Poster
 
 on:
   schedule:
-    - cron: '*/30 * * * *'   # প্রতি ৩০ মিনিট
+    - cron: '*/30 * * * *'
   workflow_dispatch:
 
 jobs:
