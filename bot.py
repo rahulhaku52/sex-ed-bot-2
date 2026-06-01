@@ -13,19 +13,14 @@ try:
     with open(INDEX_FILE, 'r') as f:
         last_index = json.load(f)
 except:
-    last_index = len(posts) if posts else 0
+    last_index = -1
 
-# শেষ থেকে শুরু করে উল্টো দিকে
-next_index = (last_index - 1) % len(posts) if posts else 0
+# পরবর্তী ইনডেক্স (সিরিয়াল, সব শেষে আবার প্রথমে)
+next_index = (last_index + 1) % len(posts) if posts else 0
 
 # পোস্ট সিলেক্ট
 post = posts[next_index]
 text = post['text']
-
-# ডিবাগ প্রিন্ট
-print(f"Last Index: {last_index}")
-print(f"Next Index: {next_index}")
-print(f"Posting: {text[:50]}")
 
 # টেলিগ্রামে পাঠানো
 url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -42,15 +37,18 @@ print("✅ Posted" if res.get('ok') else f"❌ {res}")
 with open(INDEX_FILE, 'w') as f:
     json.dump(next_index, f)
 
-# গিট কমিট ও পুশ
+# গিট কমিট ও পুশ (কনফ্লিক্ট এড়াতে pull --rebase সহ)
 try:
     subprocess.run(["git", "config", "user.name", "GitHub Actions"], check=True)
     subprocess.run(["git", "config", "user.email", "actions@github.com"], check=True)
     subprocess.run(["git", "add", INDEX_FILE], check=True)
 
+    # চেক যদি সত্যিই কোনো পরিবর্তন থাকে
     diff = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
     if diff.returncode != 0:
         subprocess.run(["git", "commit", "-m", "Update last index"], check=True)
+        
+        # রিমোটের নতুন পরিবর্তন টেনে রিবেজ করে পুশ
         subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=True)
         subprocess.run(["git", "push", "origin", "main"], check=True)
         print("✅ Index committed and pushed")
