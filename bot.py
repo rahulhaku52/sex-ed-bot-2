@@ -1,39 +1,31 @@
-import os, json, requests, subprocess, sys
+import os, json, requests, subprocess
 
-BOT_TOKEN = os.environ.get('BOT_TOKEN')
-CHANNEL_ID = os.environ.get('CHANNEL_ID')
-
-if not BOT_TOKEN or not CHANNEL_ID:
-    print("❌ BOT_TOKEN or CHANNEL_ID not set!")
-    sys.exit(1)
-
+BOT_TOKEN = os.environ['BOT_TOKEN']
+CHANNEL_ID = os.environ['CHANNEL_ID']
 INDEX_FILE = "last_index.json"
 
+# পোস্ট লোড
 with open('posts.json', 'r', encoding='utf-8') as f:
     posts = json.load(f)
 
-total = len(posts)
-print(f"📊 Total posts: {total}")
-
-if total == 0:
-    print("❌ No posts in posts.json")
-    sys.exit(1)
-
-# last_index.json পড়া
+# শেষ ইনডেক্স পড়া
 try:
     with open(INDEX_FILE, 'r') as f:
         last_index = json.load(f)
-    print(f"📂 Read last_index: {last_index}")
 except:
-    last_index = total
-    print(f"📂 No index file, set to total: {total}")
+    last_index = len(posts) if posts else 0
 
-next_index = (last_index - 1) % total
-print(f"➡️ Next index: {next_index} (0-{total-1})")
+# শেষ থেকে শুরু করে উল্টো দিকে
+next_index = (last_index - 1) % len(posts) if posts else 0
 
+# পোস্ট সিলেক্ট
 post = posts[next_index]
-text = post.get('text', '')
-print(f"📝 Selected text: {text[:80]}...")
+text = post['text']
+
+# ডিবাগ প্রিন্ট
+print(f"Last Index: {last_index}")
+print(f"Next Index: {next_index}")
+print(f"Posting: {text[:50]}")
 
 # টেলিগ্রামে পাঠানো
 url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
@@ -42,18 +34,13 @@ res = requests.post(url, json={
     "text": text,
     "parse_mode": "HTML",
     "disable_web_page_preview": True
-}, timeout=15).json()
+}).json()
 
-if res.get('ok'):
-    print("✅ Posted successfully!")
-else:
-    print(f"❌ Telegram error: {res}")
-    sys.exit(1)
+print("✅ Posted" if res.get('ok') else f"❌ {res}")
 
-# ইনডেক্স সেভ
+# ইনডেক্স আপডেট ও সেভ
 with open(INDEX_FILE, 'w') as f:
     json.dump(next_index, f)
-print(f"💾 Saved next_index: {next_index}")
 
 # গিট কমিট ও পুশ
 try:
@@ -63,11 +50,11 @@ try:
 
     diff = subprocess.run(["git", "diff", "--cached", "--quiet"], capture_output=True)
     if diff.returncode != 0:
-        subprocess.run(["git", "commit", "-m", f"Update index to {next_index}"], check=True)
+        subprocess.run(["git", "commit", "-m", "Update last index"], check=True)
         subprocess.run(["git", "pull", "--rebase", "origin", "main"], check=True)
         subprocess.run(["git", "push", "origin", "main"], check=True)
-        print("✅ Git pushed!")
+        print("✅ Index committed and pushed")
     else:
-        print("ℹ️  No change to push")
+        print("ℹ️  No change in index")
 except subprocess.CalledProcessError as e:
-    print(f"⚠️ Git error: {e}")
+    print(f"⚠️ Git error (push may have failed): {e}")
