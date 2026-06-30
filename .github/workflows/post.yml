@@ -2,7 +2,7 @@ name: Sex Ed Auto Poster
 
 on:
   schedule:
-    - cron: '* */5 * * *'
+    - cron: '*/30 * * * *'   # প্রতি ৩০ মিনিটে (তুমি চাইলে বদলাতে পারো)
   workflow_dispatch:
 
 jobs:
@@ -11,12 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # ক্যাশ রিস্টোর
+      # ক্যাশ রিস্টোর (ফিক্সড key দিয়ে)
       - name: Restore index cache
         uses: actions/cache@v4
         with:
           path: last_index.json
-          key: last-index-${{ github.run_id }}
+          key: last-index-v2
           restore-keys: |
             last-index-
 
@@ -32,10 +32,10 @@ jobs:
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
         run: python bot.py
 
-      # ক্যাশ সেভ
+      # ক্যাশ সেভ (ফিক্সড key দিয়ে)
       - name: Save index cache
         if: always()
         uses: actions/cache@v4
         with:
           path: last_index.json
-          key: last-index-${{ github.run_id }}
+          key: last-index-v2
