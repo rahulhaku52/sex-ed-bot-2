@@ -1,4 +1,4 @@
-import os, json, requests, time, random   # ← random যোগ করা হয়েছে
+import os, json, requests, time, random
 from io import BytesIO
 
 BOT_TOKEN = os.environ.get('BOT_TOKEN')
@@ -41,31 +41,66 @@ post = posts[next_index]
 caption = post.get('text', '')
 print(f"📝 Caption: {caption[:60]}...")
 
-# ---------- ইমেজ জেনারেশন (শুধু Pollinations) ----------
-def build_image_prompt(text):
-    prompt = (
-        "A beautiful Bangladeshi woman in a traditional saree, "
-        "sensual pose, village background, moody lighting, "
-        "cinematic, photorealistic, adult vibe, "
-        "no nudity, tasteful, aesthetic"
-    )
-    # টেক্সট থেকে কিছু ইঙ্গিত নেওয়া
-    if "শাড়ি" in text or "sari" in text.lower():
-        prompt += ", blouse, saree fall, navel visible"
-    if "ব্লাউজ" in text or "blouse" in text.lower():
-        prompt += ", tight blouse, cleavage hint"
-    if "প্যান্টি" in text or "panty" in text.lower():
-        prompt += ", panty line visible through thin saree"
-    if "গুদ" in text or "pussy" in text.lower():
-        prompt += ", wet patch hint on saree"
+# ---------- ইমেজ জেনারেশন (একেবারে আলাদা প্রতিবার) ----------
+def build_image_prompt():
+    """পোস্টের টেক্সট না দেখে, সম্পূর্ণ র‌্যান্ডম Adult Vibe ইমেজ প্রম্পট তৈরি করবে"""
+    # আপনার পছন্দের দৃশ্য তালিকা
+    scenes = [
+        # শাড়ি ওঠানো, প্যান্টি দেখা
+        "A Bangladeshi woman in a thin saree, saree lifted above her navel, revealing her panty, shy smile, village courtyard",
+        "A woman in a saree, bending forward to pick something, saree falls revealing her panty line, back view, outdoor",
+        "A woman in a wet saree, saree clinging to her body, transparent fabric, panty outline visible, rainy background",
 
-    # ✅ ক্যাশ ভাঙতে ও বৈচিত্র্য আনতে র‌্যান্ডম উপাদান যোগ
-    prompt += f" unique_id:{random.randint(0, 999999)}"
-    # আরেকটু ভিন্নতা: ব্যাকগ্রাউন্ড বা সময় পরিবর্তন
-    time_of_day = random.choice(["sunset", "night", "golden hour", "rainy evening"])
-    prompt += f", {time_of_day}, intricate details, soft focus"
+        # ব্লাউজ খোলা, ব্রা দেখা
+        "A woman in a tight blouse, top buttons open, one side of bra peeking out, saree loosely draped, bedroom",
+        "A woman sitting on a bed, blouse partially unbuttoned, bra cups visible, seductive expression, dim lighting",
+        "A woman in a blouse and petticoat, blouse unhooked from behind, bra strap fallen, mirror reflection",
 
-    return prompt[:300]   # ৩০০ ক্যারেক্টারের বেশি হলে কাটা
+        # শুধু ব্রা ও প্যান্টি
+        "A woman in a bra and panty, standing by the window, morning light, curvy figure, romantic mood",
+        "A woman in a lacy bra and panty, lying on a bed, one hand touching her navel, soft focus",
+
+        # শর্টস ও ছোট টপ
+        "A Bangladeshi girl wearing tiny shorts and a crop top, sitting on a chair, legs crossed, village house background",
+        "A woman in shorts and a tank top, bending to pick up a bucket, side view, outdoor, natural lighting",
+
+        # নাইটিতে
+        "A woman in a thin nighty, lying on a bed, one strap fallen, moody lighting, sensual atmosphere",
+        "A woman in a nighty, standing near a window, rain outside, nighty slightly transparent from the light"
+    ]
+
+    # র‌্যান্ডম দৃশ্য বাছাই
+    scene = random.choice(scenes)
+
+    # র‌্যান্ডম রঙ প্যালেট
+    colors = random.choice([
+        "warm colors, gold and red tones",
+        "cool colors, blue and silver tones",
+        "pastel colors, soft pink and lavender",
+        "earthy tones, brown and green"
+    ])
+
+    # র‌্যান্ডম আলো ও আবহাওয়া
+    lighting = random.choice([
+        "sunset light, golden hour glow",
+        "night time, lantern light, warm shadows",
+        "rainy evening, wet textures, soft focus",
+        "morning light, soft and dreamy"
+    ])
+
+    # র‌্যান্ডম পোজ ও বিবরণ
+    pose_details = random.choice([
+        "looking directly at camera, intense eyes",
+        "looking away, shy expression",
+        "half-closed eyes, lips slightly parted",
+        "smiling gently, relaxed posture"
+    ])
+
+    # ইউনিক সল্ট – এটাই ক্যাশ ভাঙবে
+    unique_salt = f"uid:{random.randint(100000, 999999)}_{random.randint(100000, 999999)}"
+
+    prompt = f"{scene}, {colors}, {lighting}, {pose_details}, cinematic, photorealistic, adult vibe, no nudity, tasteful, {unique_salt}"
+    return prompt[:400]
 
 def fetch_pollinations_image(prompt):
     encoded = requests.utils.quote(prompt)
@@ -90,7 +125,7 @@ def fetch_pollinations_image(prompt):
     return None
 
 print("🎨 Generating image with Pollinations...")
-prompt = build_image_prompt(caption)
+prompt = build_image_prompt()
 image_bytes = fetch_pollinations_image(prompt)
 
 # ---------- টেলিগ্রামে পাঠানো ----------
